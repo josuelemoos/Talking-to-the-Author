@@ -22,6 +22,15 @@ class AuthorChatbotGUI:
         
         self.chatbot = None
         self.processed_books = Config.list_processed_books()
+        self.loading_animation_running = False
+        self.loading_frame = 0
+        
+        # Preferências
+        self.font_size = 13  # Tamanho padrão
+        self.appearance_mode = "dark"  # Modo padrão
+        
+        # Aplica tema inicial
+        ctk.set_appearance_mode(self.appearance_mode)
         
         # Verifica se tem livros processados
         if self.processed_books:
@@ -50,17 +59,19 @@ class AuthorChatbotGUI:
         )
         title.pack(side="left")
         
-        # Botão de tema
-        self.theme_btn = ctk.CTkButton(
+        # Botão de preferências
+        pref_btn = ctk.CTkButton(
             header,
-            text="☀️ Modo Claro",
-            command=self.toggle_theme,
-            width=140,
+            text="⚙️",
+            command=self.show_preferences,
+            width=40,
             height=40,
             corner_radius=10,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=18),
+            fg_color="transparent",
+            hover_color=("gray70", "gray30")
         )
-        self.theme_btn.pack(side="right")
+        pref_btn.pack(side="right")
         
         # Subtítulo
         subtitle = ctk.CTkLabel(
@@ -276,7 +287,7 @@ class AuthorChatbotGUI:
         self.chat_display = ctk.CTkTextbox(
             chat_card,
             corner_radius=0,
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=self.font_size),
             wrap="word",
             fg_color="transparent"
         )
@@ -286,6 +297,7 @@ class AuthorChatbotGUI:
         self.chat_display.tag_config("user", foreground="#3b82f6")
         self.chat_display.tag_config("author", foreground="#10b981")
         self.chat_display.tag_config("system", foreground="#6b7280")
+        self.chat_display.tag_config("loading", foreground="#6b7280")
         
         # Input area
         input_card = ctk.CTkFrame(main, corner_radius=15, height=70)
@@ -323,7 +335,207 @@ class AuthorChatbotGUI:
         # Carrega primeiro livro
         self.load_selected_book()
     
+    def start_loading_animation(self):
+        """Inicia animação de loading estilo spinner"""
+        self.loading_animation_running = True
+        self.loading_frame = 0
+        
+        # Adiciona linha para o loading
+        self.chat_display.configure(state="normal")
+        self.loading_line_start = self.chat_display.index("end-1c linestart")
+        self.chat_display.insert("end", "\n")
+        self.chat_display.configure(state="disabled")
+        
+        self.animate_loading()
+    
+    def animate_loading(self):
+        """Anima spinner circular"""
+        if not self.loading_animation_running:
+            return
+        
+        # Spinner circular suave
+        frames = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+        
+        loading_text = f"  {frames[self.loading_frame]}  "
+        self.loading_frame = (self.loading_frame + 1) % len(frames)
+        
+        try:
+            self.chat_display.configure(state="normal")
+            
+            # Deleta a linha inteira do loading
+            self.chat_display.delete(self.loading_line_start, f"{self.loading_line_start} lineend")
+            
+            # Insere novo frame
+            self.chat_display.insert(self.loading_line_start, loading_text, "loading")
+            
+            self.chat_display.see("end")
+            self.chat_display.configure(state="disabled")
+            
+            # Continua animação (80ms para ficar bem suave)
+            self.app.after(80, self.animate_loading)
+        except:
+            pass
+    
+    def stop_loading_animation(self):
+        """Para animação de loading"""
+        self.loading_animation_running = False
+        try:
+            self.chat_display.configure(state="normal")
+            # Remove a linha completa do loading
+            self.chat_display.delete(self.loading_line_start, f"{self.loading_line_start} lineend+1c")
+            self.chat_display.configure(state="disabled")
+        except:
+            pass
+    
     def toggle_theme(self):
+        """Alterna entre modo claro e escuro"""
+        if self.appearance_mode == "dark":
+            self.appearance_mode = "light"
+            ctk.set_appearance_mode("light")
+        else:
+            self.appearance_mode = "dark"
+            ctk.set_appearance_mode("dark")
+    
+    def show_preferences(self):
+        """Mostra janela de preferências"""
+        pref_window = ctk.CTkToplevel(self.app)
+        pref_window.title("Preferências")
+        pref_window.geometry("500x400")
+        pref_window.resizable(False, False)
+        
+        # Centraliza a janela
+        pref_window.update_idletasks()
+        x = (pref_window.winfo_screenwidth() // 2) - (500 // 2)
+        y = (pref_window.winfo_screenheight() // 2) - (400 // 2)
+        pref_window.geometry(f"500x400+{x}+{y}")
+        
+        # Container
+        container = ctk.CTkFrame(pref_window, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=30, pady=30)
+        
+        # Título
+        title = ctk.CTkLabel(
+            container,
+            text="⚙️ Preferências",
+            font=ctk.CTkFont(size=28, weight="bold")
+        )
+        title.pack(pady=(0, 30))
+        
+        # Card de Aparência
+        appearance_card = ctk.CTkFrame(container)
+        appearance_card.pack(fill="x", pady=(0, 15))
+        
+        appearance_content = ctk.CTkFrame(appearance_card, fg_color="transparent")
+        appearance_content.pack(fill="both", padx=20, pady=20)
+        
+        ctk.CTkLabel(
+            appearance_content,
+            text="Tema",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            anchor="w"
+        ).pack(fill="x", pady=(0, 10))
+        
+        theme_var = ctk.StringVar(value=self.appearance_mode)
+        theme_menu = ctk.CTkSegmentedButton(
+            appearance_content,
+            values=["light", "dark"],
+            variable=theme_var,
+            command=self.change_theme_from_prefs,
+            height=40,
+            font=ctk.CTkFont(size=14)
+        )
+        theme_menu.pack(fill="x")
+        
+        # Card de Texto
+        text_card = ctk.CTkFrame(container)
+        text_card.pack(fill="x", pady=(0, 20))
+        
+        text_content = ctk.CTkFrame(text_card, fg_color="transparent")
+        text_content.pack(fill="both", padx=20, pady=20)
+        
+        ctk.CTkLabel(
+            text_content,
+            text="Tamanho da Fonte",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            anchor="w"
+        ).pack(fill="x", pady=(0, 10))
+        
+        # Preview do tamanho
+        font_preview_frame = ctk.CTkFrame(text_content, fg_color="transparent")
+        font_preview_frame.pack(fill="x", pady=(0, 10))
+        
+        ctk.CTkLabel(
+            font_preview_frame,
+            text="Atual:",
+            font=ctk.CTkFont(size=13)
+        ).pack(side="left")
+        
+        self.font_size_display = ctk.CTkLabel(
+            font_preview_frame,
+            text=f"{self.font_size}px",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=("#2563eb", "#3b82f6")
+        )
+        self.font_size_display.pack(side="left", padx=(5, 0))
+        
+        # Slider
+        font_slider = ctk.CTkSlider(
+            text_content,
+            from_=10,
+            to=20,
+            number_of_steps=10,
+            command=self.change_font_size,
+            height=20
+        )
+        font_slider.set(self.font_size)
+        font_slider.pack(fill="x", pady=(0, 5))
+        
+        # Labels do slider
+        slider_labels = ctk.CTkFrame(text_content, fg_color="transparent")
+        slider_labels.pack(fill="x")
+        
+        ctk.CTkLabel(
+            slider_labels,
+            text="Pequeno",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(side="left")
+        
+        ctk.CTkLabel(
+            slider_labels,
+            text="Grande",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(side="right")
+        
+        # Botão fechar
+        close_btn = ctk.CTkButton(
+            container,
+            text="Fechar",
+            command=pref_window.destroy,
+            height=45,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color=("#2563eb", "#1d4ed8"),
+            hover_color=("#1d4ed8", "#1e40af")
+        )
+        close_btn.pack(fill="x", pady=(10, 0))
+    
+    def change_theme_from_prefs(self, value):
+        """Muda tema a partir das preferências"""
+        self.appearance_mode = value
+        ctk.set_appearance_mode(value)
+    
+    def change_font_size(self, value):
+        """Muda tamanho da fonte"""
+        self.font_size = int(value)
+        
+        # Atualiza display na janela de preferências
+        if hasattr(self, 'font_size_display'):
+            self.font_size_display.configure(text=f"{self.font_size}px")
+        
+        # Atualiza fonte do chat se existir
+        if hasattr(self, 'chat_display'):
+            self.chat_display.configure(font=ctk.CTkFont(size=self.font_size))
         """Alterna entre modo claro e escuro"""
         current = ctk.get_appearance_mode()
         new_mode = "light" if current == "Dark" else "dark"
@@ -438,15 +650,22 @@ class AuthorChatbotGUI:
         # Mostra mensagem do usuário
         self.add_message("Você", message, "user")
         
+        # Inicia animação de loading
+        self.start_loading_animation()
+        
         # Processa em thread separada
         def get_response():
             try:
                 response = self.chatbot.chat(message)
                 info = self.chatbot.get_info()
-                self.app.after(0, lambda: self.add_message(info['author'], response, "author"))
+                
+                # Para animação e mostra resposta
+                self.app.after(0, self.stop_loading_animation)
+                self.app.after(50, lambda: self.add_message(info['author'], response, "author"))
             except Exception as e:
                 error_msg = str(e)
-                self.app.after(0, lambda: self.add_system_message(f"Erro: {error_msg}"))
+                self.app.after(0, self.stop_loading_animation)
+                self.app.after(50, lambda: self.add_system_message(f"Erro: {error_msg}"))
         
         thread = threading.Thread(target=get_response, daemon=True)
         thread.start()
@@ -456,14 +675,47 @@ class AuthorChatbotGUI:
         self.chat_display.configure(state="normal")
         
         if tag == "user":
+            # Mensagem do usuário aparece instantaneamente
             self.chat_display.insert("end", f"{sender}: ", tag)
             self.chat_display.insert("end", f"{message}\n\n")
+            self.chat_display.see("end")
+            self.chat_display.configure(state="disabled")
         else:
+            # Mensagem do autor usa efeito typewriter
             self.chat_display.insert("end", f"{sender}: ", tag)
-            self.chat_display.insert("end", f"{message}\n\n")
-        
-        self.chat_display.see("end")
-        self.chat_display.configure(state="disabled")
+            self.chat_display.configure(state="disabled")
+            self.typewriter_effect(message, tag)
+    
+    def typewriter_effect(self, text, tag, index=0):
+        """Efeito de digitação (typewriter)"""
+        if index < len(text):
+            # Adiciona próximo caractere
+            self.chat_display.configure(state="normal")
+            self.chat_display.insert("end", text[index])
+            self.chat_display.see("end")
+            self.chat_display.configure(state="disabled")
+            
+            # Velocidade variável para parecer mais natural
+            # Mais rápido em espaços, mais lento em pontuação
+            if text[index] in ['.', '!', '?', ':']:
+                delay = 100  # Pausa em pontuação
+            elif text[index] in [',', ';']:
+                delay = 50
+            elif text[index] == ' ':
+                delay = 15
+            elif text[index] == '\n':
+                delay = 30
+            else:
+                delay = 20  # Velocidade normal
+            
+            # Continua digitando
+            self.app.after(delay, lambda: self.typewriter_effect(text, tag, index + 1))
+        else:
+            # Terminou de digitar, adiciona quebra de linha
+            self.chat_display.configure(state="normal")
+            self.chat_display.insert("end", "\n\n")
+            self.chat_display.see("end")
+            self.chat_display.configure(state="disabled")
     
     def add_system_message(self, message):
         """Adiciona mensagem do sistema"""
