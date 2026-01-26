@@ -6,6 +6,10 @@ import google.generativeai as genai
 import numpy as np
 from typing import List, Tuple
 from src.config import Config
+import warnings
+
+# Suprime o warning de deprecação
+warnings.filterwarnings('ignore', message='.*google.generativeai.*')
 
 class EmbeddingManager:
     """Gerencia embeddings e busca semântica"""

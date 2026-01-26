@@ -9,6 +9,10 @@ from typing import List, Dict
 from src.config import Config
 from src.text_processor import TextProcessor
 from src.embeddings import EmbeddingManager
+import warnings
+
+# Suprime o warning de deprecação
+warnings.filterwarnings('ignore', message='.*google.generativeai.*')
 
 class AuthorChatbot:
     """Chatbot que personifica um autor"""
