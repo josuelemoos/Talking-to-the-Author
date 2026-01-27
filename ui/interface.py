@@ -17,7 +17,7 @@ class AuthorChatbotGUI:
     
     def __init__(self):
         self.app = ctk.CTk()
-        self.app.title("Author Chatbot")
+        self.app.title("Talking to the Author")
         self.app.geometry("1100x750")
         
         self.chatbot = None
@@ -26,7 +26,7 @@ class AuthorChatbotGUI:
         self.loading_frame = 0
         
         # Preferências
-        self.font_size = 13  # Tamanho padrão
+        self.font_size = 15  # Tamanho padrão aumentado
         self.appearance_mode = "dark"  # Modo padrão
         
         # Aplica tema inicial
@@ -54,8 +54,8 @@ class AuthorChatbotGUI:
         
         title = ctk.CTkLabel(
             header,
-            text="Author Chatbot",
-            font=ctk.CTkFont(size=36, weight="bold")
+            text="Talking to the Author",
+            font=ctk.CTkFont(size=38, weight="bold")
         )
         title.pack(side="left")
         
@@ -77,7 +77,7 @@ class AuthorChatbotGUI:
         subtitle = ctk.CTkLabel(
             main_container,
             text="Configure seu primeiro livro para começar",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=15),
             text_color="gray"
         )
         subtitle.pack(pady=(0, 40))
@@ -94,7 +94,7 @@ class AuthorChatbotGUI:
         file_label = ctk.CTkLabel(
             form_content,
             text="Arquivo do Livro (TXT)",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w"
         )
         file_label.pack(fill="x", pady=(0, 8))
@@ -108,7 +108,7 @@ class AuthorChatbotGUI:
             textvariable=self.file_path_var,
             height=45,
             corner_radius=10,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=15)
         )
         self.file_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
@@ -119,7 +119,7 @@ class AuthorChatbotGUI:
             width=120,
             height=45,
             corner_radius=10,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=15)
         )
         browse_btn.pack(side="right")
         
@@ -127,7 +127,7 @@ class AuthorChatbotGUI:
         author_label = ctk.CTkLabel(
             form_content,
             text="Nome do Autor",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w"
         )
         author_label.pack(fill="x", pady=(0, 8))
@@ -138,7 +138,7 @@ class AuthorChatbotGUI:
             textvariable=self.author_var,
             height=45,
             corner_radius=10,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=15)
         )
         author_entry.pack(fill="x", pady=(0, 20))
         
@@ -146,7 +146,7 @@ class AuthorChatbotGUI:
         title_label = ctk.CTkLabel(
             form_content,
             text="Título do Livro",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w"
         )
         title_label.pack(fill="x", pady=(0, 8))
@@ -157,7 +157,7 @@ class AuthorChatbotGUI:
             textvariable=self.title_var,
             height=45,
             corner_radius=10,
-            font=ctk.CTkFont(size=13)
+            font=ctk.CTkFont(size=15)
         )
         title_entry.pack(fill="x", pady=(0, 30))
         
@@ -178,7 +178,7 @@ class AuthorChatbotGUI:
         status_label = ctk.CTkLabel(
             main_container,
             text="Status do Processamento",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w"
         )
         status_label.pack(fill="x", pady=(30, 8))
@@ -187,7 +187,7 @@ class AuthorChatbotGUI:
             main_container,
             height=150,
             corner_radius=10,
-            font=ctk.CTkFont(family="Consolas", size=11),
+            font=ctk.CTkFont(family="Consolas", size=13),
             wrap="word"
         )
         self.status_text.pack(fill="both", expand=True)
@@ -214,8 +214,8 @@ class AuthorChatbotGUI:
         # Título
         title = ctk.CTkLabel(
             header_content,
-            text="💬 Author Chatbot",
-            font=ctk.CTkFont(size=20, weight="bold")
+            text="💬 Talking to the Author",
+            font=ctk.CTkFont(size=22, weight="bold")
         )
         title.pack(side="left")
         
@@ -313,7 +313,7 @@ class AuthorChatbotGUI:
             textvariable=self.message_var,
             height=40,
             corner_radius=10,
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=15),
             placeholder_text="Digite sua mensagem..."
         )
         message_entry.pack(side="left", fill="both", expand=True, padx=(0, 10))
@@ -326,7 +326,7 @@ class AuthorChatbotGUI:
             width=100,
             height=40,
             corner_radius=10,
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             fg_color="#2563eb",
             hover_color="#1d4ed8"
         )
@@ -481,8 +481,8 @@ class AuthorChatbotGUI:
         # Slider
         font_slider = ctk.CTkSlider(
             text_content,
-            from_=10,
-            to=20,
+            from_=12,
+            to=22,
             number_of_steps=10,
             command=self.change_font_size,
             height=20
