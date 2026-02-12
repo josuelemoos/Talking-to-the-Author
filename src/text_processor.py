@@ -4,6 +4,7 @@ Processador de texto para divisão em chunks
 
 from typing import List
 from src.config import Config
+import os
 
 class TextProcessor:
     """Processa e divide texto em chunks inteligentes"""
@@ -13,7 +14,18 @@ class TextProcessor:
         self.overlap = overlap or Config.CHUNK_OVERLAP
     
     def load_from_file(self, file_path: str) -> str:
-        """Carrega texto de um arquivo"""
+        """Carrega texto de um arquivo (TXT ou PDF)"""
+        file_ext = os.path.splitext(file_path)[1].lower()
+        
+        if file_ext == '.pdf':
+            return self._load_from_pdf(file_path)
+        elif file_ext == '.txt':
+            return self._load_from_txt(file_path)
+        else:
+            raise ValueError(f"Formato não suportado: {file_ext}. Use .txt ou .pdf")
+    
+    def _load_from_txt(self, file_path: str) -> str:
+        """Carrega texto de arquivo TXT"""
         encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
         
         for encoding in encodings:
@@ -24,6 +36,26 @@ class TextProcessor:
                 continue
         
         raise ValueError(f"Não foi possível ler o arquivo com nenhuma codificação testada")
+    
+    def _load_from_pdf(self, file_path: str) -> str:
+        """Carrega texto de arquivo PDF"""
+        try:
+            from PyPDF2 import PdfReader
+            
+            reader = PdfReader(file_path)
+            text = ""
+            
+            for page in reader.pages:
+                text += page.extract_text() + "\n\n"
+            
+            if not text.strip():
+                raise ValueError("Não foi possível extrair texto do PDF. O arquivo pode estar protegido ou ser uma imagem.")
+            
+            return text
+        except ImportError:
+            raise ImportError("PyPDF2 não está instalado. Execute: pip install PyPDF2")
+        except Exception as e:
+            raise ValueError(f"Erro ao ler PDF: {str(e)}")
     
     def split_into_chunks(self, text: str) -> List[str]:
         """

@@ -2,6 +2,10 @@
 Classe principal do chatbot
 """
 
+import warnings
+# Deve vir ANTES do import do google.generativeai
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 import google.generativeai as genai
 import json
 import numpy as np
@@ -9,10 +13,6 @@ from typing import List, Dict
 from src.config import Config
 from src.text_processor import TextProcessor
 from src.embeddings import EmbeddingManager
-import warnings
-
-# Suprime o warning de deprecação
-warnings.filterwarnings('ignore', message='.*google.generativeai.*')
 
 class AuthorChatbot:
     """Chatbot que personifica um autor"""

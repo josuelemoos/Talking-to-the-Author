@@ -2,14 +2,14 @@
 Gerenciador de embeddings e busca semântica
 """
 
+import warnings
+# Deve vir ANTES do import do google.generativeai
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 import google.generativeai as genai
 import numpy as np
 from typing import List, Tuple
 from src.config import Config
-import warnings
-
-# Suprime o warning de deprecação
-warnings.filterwarnings('ignore', message='.*google.generativeai.*')
 
 class EmbeddingManager:
     """Gerencia embeddings e busca semântica"""

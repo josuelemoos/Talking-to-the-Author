@@ -16,27 +16,38 @@ class AuthorChatbotGUI:
     """Interface gráfica principal - CustomTkinter"""
     
     def __init__(self):
+        print("Criando janela principal...")
         self.app = ctk.CTk()
         self.app.title("Talking to the Author")
         self.app.geometry("1100x750")
         
+        print("Inicializando variáveis...")
         self.chatbot = None
         self.processed_books = Config.list_processed_books()
         self.loading_animation_running = False
         self.loading_frame = 0
         
         # Preferências
-        self.font_size = 15  # Tamanho padrão aumentado
-        self.appearance_mode = "dark"  # Modo padrão
+        self.font_size = 15
+        self.appearance_mode = "dark"
         
         # Aplica tema inicial
         ctk.set_appearance_mode(self.appearance_mode)
         
+        print("Verificando disclaimer...")
+        # Mostra disclaimer na primeira vez
+        self.show_disclaimer_if_needed()
+        
+        print(f"Livros processados: {self.processed_books}")
         # Verifica se tem livros processados
         if self.processed_books:
+            print("Mostrando interface principal...")
             self.show_main_interface()
         else:
+            print("Mostrando interface de setup...")
             self.show_setup_interface()
+        
+        print("Interface pronta!")
     
     def show_setup_interface(self):
         """Tela de configuração inicial"""
@@ -93,7 +104,7 @@ class AuthorChatbotGUI:
         # Campo: Arquivo
         file_label = ctk.CTkLabel(
             form_content,
-            text="Arquivo do Livro (TXT)",
+            text="Arquivo do Livro (TXT ou PDF)",
             font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w"
         )
@@ -335,7 +346,172 @@ class AuthorChatbotGUI:
         # Carrega primeiro livro
         self.load_selected_book()
     
-    def start_loading_animation(self):
+    def show_disclaimer_if_needed(self):
+        """Mostra disclaimer na primeira vez que abre o app"""
+        import os
+        disclaimer_file = os.path.join(Config.DATA_DIR, '.disclaimer_shown')
+        
+        # Se já foi mostrado, apenas retorna
+        if os.path.exists(disclaimer_file):
+            print("Disclaimer já foi aceito anteriormente")
+            return
+        
+        print("Mostrando disclaimer pela primeira vez...")
+        self.disclaimer_accepted = False
+        
+        # Cria janela de disclaimer
+        disclaimer_window = ctk.CTkToplevel(self.app)
+        disclaimer_window.title("Aviso Importante")
+        disclaimer_window.geometry("600x500")
+        disclaimer_window.resizable(False, False)
+        
+        # Bloqueia interação com janela principal
+        disclaimer_window.transient(self.app)
+        disclaimer_window.grab_set()
+        
+        # Centraliza
+        disclaimer_window.update_idletasks()
+        x = (disclaimer_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (disclaimer_window.winfo_screenheight() // 2) - (500 // 2)
+        disclaimer_window.geometry(f"600x500+{x}+{y}")
+        
+        # Impede fechar com X
+        disclaimer_window.protocol("WM_DELETE_WINDOW", lambda: None)
+        
+        # Container
+        container = ctk.CTkFrame(disclaimer_window, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=30, pady=30)
+        
+        # Ícone e título
+        title_frame = ctk.CTkFrame(container, fg_color="transparent")
+        title_frame.pack(fill="x", pady=(0, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="⚠️",
+            font=ctk.CTkFont(size=48)
+        ).pack()
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="Aviso Importante",
+            font=ctk.CTkFont(size=28, weight="bold")
+        ).pack(pady=(10, 0))
+        
+        # Card com disclaimer
+        disclaimer_card = ctk.CTkFrame(container)
+        disclaimer_card.pack(fill="both", expand=True, pady=(0, 20))
+        
+        disclaimer_text = ctk.CTkTextbox(
+            disclaimer_card,
+            wrap="word",
+            font=ctk.CTkFont(size=14),
+            fg_color="transparent"
+        )
+        disclaimer_text.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        disclaimer_content = """Este aplicativo utiliza Inteligência Artificial para simular conversas baseadas em obras literárias.
+
+IMPORTANTE:
+
+• As respostas são SIMULAÇÕES geradas por IA baseadas no conteúdo do livro fornecido.
+
+• NÃO representam as opiniões, pensamentos ou declarações reais do autor.
+
+• O autor original NÃO está envolvido neste processo e não endossa as respostas geradas.
+
+• As respostas podem conter imprecisões, interpretações incorretas ou informações que não refletem fielmente o pensamento do autor.
+
+• Este aplicativo é uma ferramenta educacional e de entretenimento, não uma fonte autoritativa sobre o autor ou sua obra.
+
+• Use com senso crítico e sempre consulte as obras originais para compreensão autêntica do pensamento do autor.
+
+Ao continuar, você reconhece e aceita estas limitações."""
+        
+        disclaimer_text.insert("1.0", disclaimer_content)
+        disclaimer_text.configure(state="disabled")
+        
+        # Checkbox de concordância
+        agree_var = ctk.BooleanVar(value=False)
+        
+        agree_frame = ctk.CTkFrame(container, fg_color="transparent")
+        agree_frame.pack(fill="x", pady=(0, 15))
+        
+        agree_check = ctk.CTkCheckBox(
+            agree_frame,
+            text="Li e compreendo o aviso acima",
+            variable=agree_var,
+            font=ctk.CTkFont(size=14),
+            checkbox_width=24,
+            checkbox_height=24
+        )
+        agree_check.pack()
+        
+        # Funções dos botões
+        def close_disclaimer():
+            if agree_var.get():
+                print("Usuário aceitou o disclaimer")
+                # Marca como visto
+                os.makedirs(Config.DATA_DIR, exist_ok=True)
+                with open(disclaimer_file, 'w') as f:
+                    f.write('shown')
+                self.disclaimer_accepted = True
+                disclaimer_window.destroy()
+            else:
+                from tkinter import messagebox
+                messagebox.showwarning(
+                    "Atenção",
+                    "Você precisa ler e concordar com o aviso para continuar."
+                )
+        
+        def exit_app():
+            print("Usuário recusou o disclaimer, fechando...")
+            disclaimer_window.destroy()
+            self.app.quit()
+            import sys
+            sys.exit(0)
+        
+        # Botões
+        buttons_frame = ctk.CTkFrame(container, fg_color="transparent")
+        buttons_frame.pack(fill="x")
+        
+        cancel_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Sair",
+            command=exit_app,
+            height=50,
+            font=ctk.CTkFont(size=16),
+            fg_color="transparent",
+            border_width=2,
+            border_color=("gray60", "gray40"),
+            hover_color=("gray80", "gray20")
+        )
+        cancel_btn.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        
+        continue_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Continuar",
+            command=close_disclaimer,
+            height=50,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            fg_color=("#2563eb", "#1d4ed8"),
+            hover_color=("#1d4ed8", "#1e40af")
+        )
+        continue_btn.pack(side="right", fill="x", expand=True, padx=(10, 0))
+        
+        # Aguarda fechamento
+        print("Aguardando resposta do usuário...")
+        self.app.wait_window(disclaimer_window)
+        
+        # Se não aceitou, fecha o app
+        if not self.disclaimer_accepted:
+            print("Disclaimer não foi aceito, encerrando...")
+            self.app.quit()
+            import sys
+            sys.exit(0)
+        
+        print("Disclaimer aceito, continuando...")
+    
         """Inicia animação de loading estilo spinner"""
         self.loading_animation_running = True
         self.loading_frame = 0
@@ -552,7 +728,12 @@ class AuthorChatbotGUI:
         """Abre diálogo para selecionar arquivo"""
         filename = filedialog.askopenfilename(
             title="Selecione o livro",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            filetypes=[
+                ("Arquivos suportados", "*.txt *.pdf"),
+                ("Text files", "*.txt"),
+                ("PDF files", "*.pdf"),
+                ("All files", "*.*")
+            ]
         )
         if filename:
             self.file_path_var.set(filename)
@@ -688,6 +869,9 @@ class AuthorChatbotGUI:
     
     def typewriter_effect(self, text, tag, index=0):
         """Efeito de digitação (typewriter)"""
+        if not hasattr(self, 'chat_display'):
+            return
+            
         if index < len(text):
             # Adiciona próximo caractere
             self.chat_display.configure(state="normal")
