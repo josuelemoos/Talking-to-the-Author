@@ -11,11 +11,11 @@ class Config:
     """Configurações do sistema"""
     
     # API
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     
     # Modelos
-    GENERATION_MODEL = "gemini-2.5-flash"
-    EMBEDDING_MODEL = "models/text-embedding-004"
+    GENERATION_MODEL = "llama-3.1-70b-versatile"  # Modelo do Groq
+    EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # Modelo local (gratuito)
     
     # Diretórios
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,8 +24,8 @@ class Config:
     PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
     
     # Processamento de Texto
-    CHUNK_SIZE = 1500
-    CHUNK_OVERLAP = 200
+    CHUNK_SIZE = 2500  # Aumentado para gerar menos chunks
+    CHUNK_OVERLAP = 300
     
     # Geração de Respostas
     GENERATION_CONFIG = {
@@ -39,22 +39,22 @@ class Config:
     RESPONSE_PROFILES = {
         'conciso': {
             'temperature': 0.5,
-            'max_tokens': 800,
+            'max_tokens': 300,
             'instrucao': 'Seja direto e conciso. Responda em 2-3 frases no máximo.'
         },
         'normal': {
             'temperature': 0.7,
-            'max_tokens': 2000,
+            'max_tokens': 800,
             'instrucao': 'Responda de forma equilibrada em 1-2 parágrafos.'
         },
         'detalhado': {
             'temperature': 0.8,
-            'max_tokens': 3000,
+            'max_tokens': 1500,
             'instrucao': 'Desenvolva sua resposta com profundidade e exemplos.'
         },
         'provocativo': {
             'temperature': 0.9,
-            'max_tokens': 2000,
+            'max_tokens': 1000,
             'instrucao': 'Seja desafiador e provocativo. Questione premissas.'
         }
     }
@@ -65,8 +65,8 @@ class Config:
     @classmethod
     def validate(cls):
         """Valida as configurações essenciais"""
-        if not cls.GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY não encontrada no .env")
+        if not cls.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY não encontrada no .env")
         
         # Cria diretórios se não existirem
         os.makedirs(cls.BOOKS_DIR, exist_ok=True)

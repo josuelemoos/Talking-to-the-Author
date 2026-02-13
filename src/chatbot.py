@@ -2,11 +2,7 @@
 Classe principal do chatbot
 """
 
-import warnings
-# Deve vir ANTES do import do google.generativeai
-warnings.filterwarnings('ignore', category=FutureWarning)
-
-import google.generativeai as genai
+from groq import Groq
 import json
 import numpy as np
 from typing import List, Dict
@@ -18,21 +14,16 @@ class AuthorChatbot:
     """Chatbot que personifica um autor"""
     
     def __init__(self, api_key: str = None, response_profile: str = 'normal'):
-        self.api_key = api_key or Config.GEMINI_API_KEY
-        genai.configure(api_key=self.api_key)
+        self.api_key = api_key or Config.GROQ_API_KEY
+        self.client = Groq(api_key=self.api_key)
         
         # Configura modelo com perfil de resposta
         self.response_profile = response_profile
         profile = Config.RESPONSE_PROFILES[response_profile]
         
-        generation_config = Config.GENERATION_CONFIG.copy()
-        generation_config['temperature'] = profile['temperature']
-        generation_config['max_output_tokens'] = profile['max_tokens']
-        
-        self.model = genai.GenerativeModel(
-            Config.GENERATION_MODEL,
-            generation_config=generation_config
-        )
+        self.temperature = profile['temperature']
+        self.max_tokens = profile['max_tokens']
+        self.model_name = Config.GENERATION_MODEL
         
         # Componentes
         self.text_processor = TextProcessor()
@@ -112,14 +103,8 @@ class AuthorChatbot:
         self.response_profile = profile
         profile_config = Config.RESPONSE_PROFILES[profile]
         
-        generation_config = Config.GENERATION_CONFIG.copy()
-        generation_config['temperature'] = profile_config['temperature']
-        generation_config['max_output_tokens'] = profile_config['max_tokens']
-        
-        self.model = genai.GenerativeModel(
-            Config.GENERATION_MODEL,
-            generation_config=generation_config
-        )
+        self.temperature = profile_config['temperature']
+        self.max_tokens = profile_config['max_tokens']
     
     def chat(self, user_message: str, show_sources: bool = False) -> str:
         """
@@ -161,9 +146,17 @@ PERGUNTA DO LEITOR:
 Responda de forma natural, como o autor responderia. Use primeira pessoa. 
 Se a pergunta não puder ser respondida com base no livro, admita isso honestamente mantendo a persona do autor."""
 
-        # Gera resposta
-        response = self.model.generate_content(prompt)
-        answer = response.text
+        # Gera resposta com Groq
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
+        
+        answer = response.choices[0].message.content
         
         if show_sources:
             sources_text = "\n\n--- TRECHOS USADOS DO LIVRO ---\n"

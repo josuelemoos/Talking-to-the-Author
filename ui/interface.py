@@ -512,6 +512,66 @@ Ao continuar, você reconhece e aceita estas limitações."""
         
         print("Disclaimer aceito, continuando...")
     
+    def start_loading_animation(self):
+        """Inicia animação de loading estilo spinner"""
+        if not hasattr(self, 'chat_display'):
+            return
+            
+        self.loading_animation_running = True
+        self.loading_frame = 0
+        
+        # Adiciona linha para o loading
+        self.chat_display.configure(state="normal")
+        self.loading_line_start = self.chat_display.index("end-1c linestart")
+        self.chat_display.insert("end", "\n")
+        self.chat_display.configure(state="disabled")
+        
+        self.animate_loading()
+    
+    def animate_loading(self):
+        """Anima spinner circular"""
+        if not self.loading_animation_running:
+            return
+        
+        if not hasattr(self, 'chat_display'):
+            return
+        
+        # Spinner circular suave
+        frames = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+        
+        loading_text = f"  {frames[self.loading_frame]}  "
+        self.loading_frame = (self.loading_frame + 1) % len(frames)
+        
+        try:
+            self.chat_display.configure(state="normal")
+            
+            # Deleta a linha inteira do loading
+            self.chat_display.delete(self.loading_line_start, f"{self.loading_line_start} lineend")
+            
+            # Insere novo frame
+            self.chat_display.insert(self.loading_line_start, loading_text, "loading")
+            
+            self.chat_display.see("end")
+            self.chat_display.configure(state="disabled")
+            
+            # Continua animação (80ms para ficar bem suave)
+            self.app.after(80, self.animate_loading)
+        except:
+            pass
+    
+    def stop_loading_animation(self):
+        """Para animação de loading"""
+        self.loading_animation_running = False
+        if not hasattr(self, 'chat_display'):
+            return
+        try:
+            self.chat_display.configure(state="normal")
+            # Remove a linha completa do loading
+            self.chat_display.delete(self.loading_line_start, f"{self.loading_line_start} lineend+1c")
+            self.chat_display.configure(state="disabled")
+        except:
+            pass
+    
         """Inicia animação de loading estilo spinner"""
         self.loading_animation_running = True
         self.loading_frame = 0

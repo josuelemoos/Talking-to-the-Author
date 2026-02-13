@@ -42,11 +42,19 @@ class TextProcessor:
         try:
             from PyPDF2 import PdfReader
             
+            print(f"Abrindo PDF: {file_path}")
             reader = PdfReader(file_path)
+            print(f"Total de páginas: {len(reader.pages)}")
+            
             text = ""
             
-            for page in reader.pages:
-                text += page.extract_text() + "\n\n"
+            for i, page in enumerate(reader.pages):
+                print(f"Extraindo página {i+1}/{len(reader.pages)}...")
+                page_text = page.extract_text()
+                text += page_text + "\n\n"
+            
+            print(f"Texto extraído: {len(text)} caracteres")
+            print(f"Primeiros 200 caracteres: {text[:200]}")
             
             if not text.strip():
                 raise ValueError("Não foi possível extrair texto do PDF. O arquivo pode estar protegido ou ser uma imagem.")
@@ -55,6 +63,7 @@ class TextProcessor:
         except ImportError:
             raise ImportError("PyPDF2 não está instalado. Execute: pip install PyPDF2")
         except Exception as e:
+            print(f"Erro detalhado ao ler PDF: {type(e).__name__}: {str(e)}")
             raise ValueError(f"Erro ao ler PDF: {str(e)}")
     
     def split_into_chunks(self, text: str) -> List[str]:
