@@ -9,6 +9,7 @@ from typing import List, Dict
 from src.config import Config
 from src.text_processor import TextProcessor
 from src.embeddings import EmbeddingManager
+from src.style_analyzer import StyleAnalyzer
 
 class AuthorChatbot:
     """Chatbot que personifica um autor"""
@@ -28,11 +29,13 @@ class AuthorChatbot:
         # Componentes
         self.text_processor = TextProcessor()
         self.embedding_manager = EmbeddingManager(self.api_key)
+        self.style_analyzer = StyleAnalyzer()
         
         # Dados
         self.author_info = {}
         self.chunks = []
         self.embeddings = []
+        self.style_description = ""
     
     def process_book(self, file_path: str, author_name: str, book_title: str) -> Dict:
         """
@@ -52,17 +55,27 @@ class AuthorChatbot:
         print("Dividindo em chunks...")
         self.chunks = self.text_processor.split_into_chunks(text)
         
+        print("Analisando estilo de escrita do autor...")
+        style_profile = self.style_analyzer.analyze_text(text)
+        self.style_description = self.style_analyzer.get_style_description()
+        
+        print(f"\n📝 PERFIL DE ESTILO DETECTADO:")
+        print(f"   {self.style_description}\n")
+        
         print(f"Gerando embeddings para {len(self.chunks)} chunks...")
         self.embeddings = self.embedding_manager.generate_embeddings(self.chunks)
         
         self.author_info = {
             'name': author_name,
             'book_title': book_title,
-            'file_path': file_path
+            'file_path': file_path,
+            'style_profile': style_profile,
+            'style_description': self.style_description
         }
         
         stats = self.text_processor.get_statistics(text)
         stats['actual_chunks'] = len(self.chunks)
+        stats['style_analysis'] = style_profile
         
         print("Processamento concluído!")
         return stats
@@ -73,7 +86,8 @@ class AuthorChatbot:
             'author_info': self.author_info,
             'chunks': self.chunks,
             'embeddings': [emb.tolist() for emb in self.embeddings],
-            'response_profile': self.response_profile
+            'response_profile': self.response_profile,
+            'style_description': self.style_description
         }
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -89,6 +103,7 @@ class AuthorChatbot:
         self.author_info = data['author_info']
         self.chunks = data['chunks']
         self.embeddings = [np.array(emb) for emb in data['embeddings']]
+        self.style_description = data.get('style_description', '')
         
         # IMPORTANTE: Retreina o vectorizer com os chunks carregados
         print("Reconstruindo índice de busca...")
@@ -98,6 +113,8 @@ class AuthorChatbot:
             self.set_response_profile(data['response_profile'])
         
         print(f"Base carregada: {self.author_info['book_title']}")
+        if self.style_description:
+            print(f"📝 Estilo do autor: {self.style_description}")
     
     def set_response_profile(self, profile: str):
         """Altera o perfil de resposta"""
