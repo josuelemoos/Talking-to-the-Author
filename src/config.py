@@ -14,7 +14,7 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     
     # Modelos
-    GENERATION_MODEL = "llama-3.1-70b-versatile"  # Modelo do Groq
+    GENERATION_MODEL = "llama-3.3-70b-versatile"  # Modelo atualizado do Groq
     EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # Modelo local (gratuito)
     
     # Diretórios

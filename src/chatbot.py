@@ -90,6 +90,10 @@ class AuthorChatbot:
         self.chunks = data['chunks']
         self.embeddings = [np.array(emb) for emb in data['embeddings']]
         
+        # IMPORTANTE: Retreina o vectorizer com os chunks carregados
+        print("Reconstruindo índice de busca...")
+        self.embedding_manager.generate_embeddings(self.chunks, show_progress=False)
+        
         if 'response_profile' in data:
             self.set_response_profile(data['response_profile'])
         
